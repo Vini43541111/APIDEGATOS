@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATS</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="jumbotron jumbotron-fluid bg-primary text-white text-center">
+        <div class="container">
+            <h1 class="display-4">API DE GATOS</h1>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h2 class="mb-0">Fato aleatório</h2>
+                    </div>
+                    <div class="card-body text-center">
+                        <div id="randomFact" class="mb-3">
+                            <p class="lead">Clique no botao</p>
+                        </div>
+                        <button class="btn btn-info btn-lg" onclick="getRandomFact()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">lista de fatos</h2>
+                        <button class="btn btn-light btn-sm" onclick="fatosgatos()">
+                            <i class="fas fa-refresh"></i> recarregar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="factsContainer">
+                            <div class="col-12 text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-warning text-dark">
+                        <h2 class="mb-0">Fatos por Tamanho</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="maxLength">Tamanho máximo do fato (caracteres):</label>
+                                    <input type="number" class="form-control" id="maxLength" 
+                                           placeholder="Ex: 100" min="10" max="200" value="100">
+                                </div>
+                                <button class="btn btn-warning mr-2" onclick="filtro()">
+                                    <i class="fas fa-search"></i> Buscar com Filtro
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="Sfiltro()">
+                                    <i class="fas fa-list"></i> Buscar sem Filtro
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <strong>Filtros:</strong><br>
+                                    • cm filtro: fatos ateo tamanho especificado<br>
+                                    • sem filtro: todos os fatos disponíveis
+                                </div>
+                            </div>
+                        </div>
+                        <div id="searchResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">🐾 Racas de Gatos</h2>
+                        <button class="btn btn-light btn-sm" onclick="racas()">
+                            <i class="fas fa-paw"></i> Carregar Racas
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="breedsContainer">
+                            <div class="col-12 text-center">
+                                <p class="text-muted">Clique em "Carregar Raças" para ver as diferentes raças de gatos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-center py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <p class="text-white mb-2">
+                        <i class="fas fa-heart text-danger"></i>
+                        Feito com amor para amantes de gatos | Cat Facts API
+                        <i class="fas fa-cat text-warning"></i>
+                    </p>
+                    <hr class="bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-light mb-1">
+                                <i class="fas fa-user text-info"></i>
+                                <strong>Desenvolvido por:</strong> VINICIUS BRISOLA DE OLIVEIRA
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-light mb-1">
+                                <i class="fas fa-graduation-cap text-success"></i>
+                                <strong>Turma:</strong> DESENVOLVIMENTO WEB
+                            </p>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i>
+                        © 2025 - Projeto Frontend com Bootstrap e API Integration
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        const CAT_API_BASE = 'https://catfact.ninja';
+
+        async function getRandomFact() {
+            try {
+                showLoading('randomFact');
+                const response = await fetch(`${CAT_API_BASE}/fact`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displayRandomFact(data);
+            } catch (error) {
+                console.error('Erro ao buscar fato aleatório:', error);
+                document.getElementById('randomFact').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Erro ao carregar fato. Tente novamente.
+                    </div>
+                `;
+            }
+        }
+
+        async function fatosgatos(limit = 10) {
+            try {
+                showLoading('factsContainer');
+                const response = await fetch(`${CAT_API_BASE}/facts?limit=${limit}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displayCatFacts(data.data);
+            } catch (error) {
+                console.error('Erro ao buscar lista de fatos:', error);
+                document.getElementById('factsContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Erro ao carregar fatos. Tente novamente.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function filtro() {
+            try {
+                const maxLength = document.getElementById('maxLength').value || 100;
+                showLoading('searchResults');
+                
+                const response = await fetch(`${CAT_API_BASE}/facts?max_length=${maxLength}&limit=5`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displaySearchResults(data.data, `Fatos com até ${maxLength} caracteres:`);
+            } catch (error) {
+                console.error('Erro na busca com filtro:', error);
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Erro na busca. Tente novamente.
+                    </div>
+                `;
+            }
+        }
+
+        async function Sfiltro() {
+            try {
+                showLoading('searchResults');
+                const response = await fetch(`${CAT_API_BASE}/facts?limit=8`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displaySearchResults(data.data, 'Todos os fatos disponíveis:');
+            } catch (error) {
+                console.error('Erro na busca sem filtro:', error);
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Erro na busca. Tente novamente.
+                    </div>
+                `;
+            }
+        }
+
+        async function racas() {
+            try {
+                showLoading('breedsContainer');
+                const response = await fetch(`${CAT_API_BASE}/breeds?limit=12`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displayCatBreeds(data.data);
+            } catch (error) {
+                console.error('Erro ao buscar raças:', error);
+                document.getElementById('breedsContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Erro ao carregar raças. Tente novamente.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function showLoading(containerId) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Carregando...</span>
+                    </div>
+                    <p class="mt-2">Carregando...</p>
+                </div>
+            `;
+        }
+
+        function displayRandomFact(fact) {
+            const container = document.getElementById('randomFact');
+            container.innerHTML = `
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <blockquote class="blockquote text-center mb-0">
+                            <p class="mb-3">"${fact.fact}"</p>
+                            <footer class="blockquote-footer">
+                                <small class="text-muted">
+                                    <i class="fas fa-ruler"></i> ${fact.length} caracteres
+                                </small>
+                            </footer>
+                        </blockquote>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayCatFacts(facts) {
+            const container = document.getElementById('factsContainer');
+            
+            if (!facts || facts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Nenhum fato encontrado.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const factsHTML = facts.map((fact, index) => `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 border-success">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-auto">
+                                <h6 class="card-subtitle mb-2 text-success">
+                                    <i class="fas fa-cat"></i> Fato #${index + 1}
+                                </h6>
+                                <p class="card-text">${fact.fact}</p>
+                            </div>
+                            <small class="text-muted mt-2">
+                                <i class="fas fa-ruler"></i> ${fact.length} caracteres
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = factsHTML;
+        }
+
+        function displaySearchResults(facts, title) {
+            const container = document.getElementById('searchResults');
+            
+            if (!facts || facts.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-search"></i>
+                        Nenhum fato encontrado com os critérios especificados.
+                    </div>
+                `;
+                return;
+            }
+
+            const resultsHTML = `
+                <div class="mt-3">
+                    <h5 class="text-warning">
+                        <i class="fas fa-search"></i> ${title}
+                    </h5>
+                    <div class="row">
+                        ${facts.map((fact, index) => `
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-warning">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-warning">
+                                            Resultado #${index + 1}
+                                        </h6>
+                                        <p class="card-text">${fact.fact}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-ruler"></i> ${fact.length} caracteres
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = resultsHTML;
+        }
+
+        function displayCatBreeds(breeds) {
+            const container = document.getElementById('breedsContainer');
+            
+            if (!breeds || breeds.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Nenhuma raça encontrada.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const breedsHTML = breeds.map(breed => `
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 border-dark">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-dark">
+                                <i class="fas fa-paw"></i> ${breed.breed}
+                            </h5>
+                            <div class="mb-auto">
+                                <p class="card-text">
+                                    <strong>País:</strong> ${breed.country}<br>
+                                    <strong>Origem:</strong> ${breed.origin}<br>
+                                    <strong>Pelagem:</strong> ${breed.coat}<br>
+                                    <strong>Padrão:</strong> ${breed.pattern}
+                                </p>
+                            </div>
+                            <small class="text-muted mt-2">
+                                <i class="fas fa-globe"></i> ${breed.country}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = breedsHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fatosgatos();
+        });
+    </script>
+</body>
+</html>
