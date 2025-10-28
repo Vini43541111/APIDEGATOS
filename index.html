@@ -12,6 +12,9 @@
     <div class="jumbotron jumbotron-fluid bg-primary text-white text-center">
         <div class="container">
             <h1 class="display-4">API DE GATOS</h1>
+            <button class="btn btn-light mt-3" onclick="openLogsModal()">
+                <i class="fas fa-list-alt"></i> Ver Logs de Operações
+            </button>
         </div>
     </div>
 
@@ -77,8 +80,8 @@
                             <div class="col-md-6">
                                 <div class="alert alert-info">
                                     <strong>Filtros:</strong><br>
-                                    • cm filtro: fatos ateo tamanho especificado<br>
-                                    • sem filtro: todos os fatos disponíveis
+                                    • Com filtro: fatos até o tamanho especificado<br>
+                                    • Sem filtro: todos os fatos disponíveis
                                 </div>
                             </div>
                         </div>
@@ -104,6 +107,39 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="logsModal" tabindex="-1" role="dialog" aria-labelledby="logsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="logsModalLabel">
+                        <i class="fas fa-list-alt"></i> Logs de Operações da API
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="logsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Carregando logs...</span>
+                            </div>
+                            <p class="mt-2">Carregando logs...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="loadLogs()">
+                        <i class="fas fa-sync-alt"></i> Atualizar Logs
+                    </button>
                 </div>
             </div>
         </div>
@@ -148,6 +184,109 @@
     
     <script>
         const CAT_API_BASE = 'https://catfact.ninja';
+        const LOG_API_BASE = 'https://www.piway.com.br/unoesc/api';
+        const MATRICULA = '428356';
+
+        async function registerLog(apiName, method, result) {
+            try {
+                const url = `${LOG_API_BASE}/inserir/log/${MATRICULA}/${encodeURIComponent(apiName)}/${encodeURIComponent(method)}/${encodeURIComponent(result)}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': '*/*',
+                    }
+                });
+                const data = await response.text();
+            } catch (error) {
+                // Log silencioso se falhar
+            }
+        }
+
+        async function loadLogs() {
+            displayLogsAsCards();
+        }
+
+        function displayLogsAsCards() {
+            const container = document.getElementById('logsContainer');
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-database"></i> Logs da API - Matrícula: ${MATRICULA}
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe 
+                            id="logsIframe"
+                            src="${LOG_API_BASE}/logs/${MATRICULA}" 
+                            style="width: 100%; height: 400px; border: none;">
+                        </iframe>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0"><i class="fas fa-trash"></i> Excluir Log</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="logIdInput" placeholder="Digite o ID do log" min="1">
+                            <div class="input-group-append">
+                                <button class="btn btn-danger" onclick="deleteLogFromList()">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function deleteLogFromList() {
+            const logId = document.getElementById('logIdInput').value;
+            
+            if (!logId) {
+                alert('Digite o ID do log.');
+                return;
+            }
+            
+            if (!confirm(`Deseja excluir log ID ${logId}?`)) {
+                return;
+            }
+            
+            const button = document.querySelector('#logIdInput').nextElementSibling.querySelector('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+            button.disabled = true;
+            
+            const deleteUrl = `${LOG_API_BASE}/excluir/log/${logId}/aluno/${MATRICULA}`;
+            const deleteWindow = window.open(deleteUrl, '_blank');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                
+                if (deleteWindow) {
+                    deleteWindow.close();
+                }
+                
+                document.getElementById('logIdInput').value = '';
+                displayLogsAsCards();
+                alert(`Log ID ${logId} excluído com sucesso!`);
+                
+            }, 3000);
+        }
+
+
+
+
+        function openLogsModal() {
+            $('#logsModal').modal('show');
+            loadLogs();
+        }
 
         async function getRandomFact() {
             try {
@@ -157,8 +296,10 @@
                 
                 const data = await response.json();
                 displayRandomFact(data);
+                
+                await registerLog('Cat Facts API', 'Fato Aleatório', `Fato com ${data.length} caracteres`);
+                
             } catch (error) {
-                console.error('Erro ao buscar fato aleatório:', error);
                 document.getElementById('randomFact').innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -176,8 +317,10 @@
                 
                 const data = await response.json();
                 displayCatFacts(data.data);
+                
+                await registerLog('Cat Facts API', 'Lista de Fatos', `${data.data.length} fatos carregados`);
+                
             } catch (error) {
-                console.error('Erro ao buscar lista de fatos:', error);
                 document.getElementById('factsContainer').innerHTML = `
                     <div class="col-12">
                         <div class="alert alert-danger">
@@ -199,8 +342,10 @@
                 
                 const data = await response.json();
                 displaySearchResults(data.data, `Fatos com até ${maxLength} caracteres:`);
+                
+                await registerLog('Cat Facts API', 'Busca com Filtro', `${data.data.length} fatos até ${maxLength} caracteres`);
+                
             } catch (error) {
-                console.error('Erro na busca com filtro:', error);
                 document.getElementById('searchResults').innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -218,8 +363,10 @@
                 
                 const data = await response.json();
                 displaySearchResults(data.data, 'Todos os fatos disponíveis:');
+                
+                await registerLog('Cat Facts API', 'Busca sem Filtro', `${data.data.length} fatos retornados`);
+                
             } catch (error) {
-                console.error('Erro na busca sem filtro:', error);
                 document.getElementById('searchResults').innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -237,8 +384,10 @@
                 
                 const data = await response.json();
                 displayCatBreeds(data.data);
+                
+                await registerLog('Cat Facts API', 'Lista de Raças', `${data.data.length} raças carregadas`);
+                
             } catch (error) {
-                console.error('Erro ao buscar raças:', error);
                 document.getElementById('breedsContainer').innerHTML = `
                     <div class="col-12">
                         <div class="alert alert-danger">
